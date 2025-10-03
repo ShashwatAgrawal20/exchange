@@ -1,39 +1,46 @@
-#include <external/uwebsockets/src/App.h>
-#include <iostream>
-#include <string_view>
+#include "main.hpp"
 
-int main() {
-    /* ws->getUserData returns one of these */
-    struct PerSocketData {
-        /* Fill with user data */
-    };
+constexpr bool isUsingSSL = false;
+constexpr bool isServer = true;
+typedef uWS::WebSocket<isUsingSSL, isServer, SocketData> WebSocket;
 
-    constexpr int port = 7000;
-    uWS::App()
-        .ws<PerSocketData>(
-            "/*",
-            {.open = [](auto * /*ws*/) { std::cout << "Client connected.\n"; },
-             .message =
-                 [](auto *ws, std::string_view message, uWS::OpCode opCode) {
-                     std::cout << "Received message: " << message << "\n";
-                     ws->send(message, opCode);
-                 },
+void socketOpenCallback(WebSocket* webSocket)
+{
+    std::cout << "Client connected" << std::endl; 
+}
+void socketMessageCallback(WebSocket* webSocket, std::string_view message, uWS::OpCode opCode)
+{
+    std::cout << "Received message: " << message << std::endl;
+    webSocket->send(message, opCode);
+}
+void socketCloseCallback(WebSocket* webSocket, int closeCode, std::string_view message)
+{
+    std::cout << "Client disconnected" << std::endl;
+}
+void socketListenCallback(us_listen_socket_t* listenSocket)
+{
+    if(listenSocket) 
+    {
+        int localPort = us_socket_remote_port(0, (us_socket_t*)listenSocket);
+        std::cout << "WebSocket server listening on port: " << localPort << std::endl;
+    } 
+    else
+    {
+        std::cout << "WebSocket server failed to listen" << std::endl;
+    }
+}
+int main() 
+{
+    uWS::App application = uWS::App();
 
-             .close =
-                 [](auto * /*ws*/, int /*code*/, std::string_view /*message*/) {
-                     std::cout << "Client disconnected.\n";
-                 }})
-        .listen(port,
-                [](auto *listen_socket) {
-                    if (listen_socket) {
-                        std::cout << "WebSocket server listening on port "
-                                  << port << "\n";
-                    } else {
-                        std::cerr << "Failed to listen on port " << port
-                                  << "\n";
-                    }
-                })
-        .run();
+    uWS::App::WebSocketBehavior<SocketData> webSocketBehaviour = {};
+    webSocketBehaviour.open = &socketOpenCallback;
+    webSocketBehaviour.message = &socketMessageCallback;
+    webSocketBehaviour.close = &socketCloseCallback;
+
+    constexpr int listenPort = 7000;
+    application.listen(listenPort, &socketListenCallback);
+    application.run();
 
     return 0;
 }

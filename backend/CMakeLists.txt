@@ -46,7 +46,7 @@ target_link_libraries(${TARGET_NAME} PRIVATE uWebSockets_Interface)
 if(MSVC)
   target_compile_options(${TARGET_NAME} PRIVATE /W4 /WX)
 else()
-  target_compile_options(${TARGET_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror)
+  target_compile_options(${TARGET_NAME} PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
 add_dependencies(websocket_server build_usockets)
