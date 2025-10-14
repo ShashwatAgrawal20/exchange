@@ -2,8 +2,7 @@
 #include <iostream>
 #include <string_view>
 
-struct SocketData
-{
+struct SocketData {
     int listenPort;
-        /* Fill with user data */
+    /* Fill with user data */
 };
