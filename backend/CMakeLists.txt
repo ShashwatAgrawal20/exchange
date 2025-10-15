@@ -39,7 +39,8 @@ target_include_directories(uWebSockets_Interface INTERFACE
 
 target_link_libraries(uWebSockets_Interface INTERFACE uSockets ZLIB::ZLIB OpenSSL::SSL OpenSSL::Crypto)
 
-add_executable(${TARGET_NAME} main.cpp)
+file(GLOB TARGET_SOURCES "src/*.cpp")
+add_executable(${TARGET_NAME} ${TARGET_SOURCES})
 
 target_link_libraries(${TARGET_NAME} PRIVATE uWebSockets_Interface)
 
