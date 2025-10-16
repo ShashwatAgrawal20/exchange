@@ -6,7 +6,7 @@ constexpr static std::string_view MARKET_SNAPSHOT_SUB_STR = "market/snapshot";
 
 void broadcast_callback(us_timer_t *t) {
     if (t) {
-        uWS::App *app = *((uWS::App **)us_timer_ext(t));
+        uWS::SSLApp *app = *((uWS::SSLApp **)us_timer_ext(t));
         std::string snapshot = create_market_snapshot();
         app->publish(MARKET_SNAPSHOT_SUB_STR, snapshot, uWS::OpCode::TEXT);
     }
@@ -14,8 +14,11 @@ void broadcast_callback(us_timer_t *t) {
 
 } // namespace
 
-WebSocketServer::WebSocketServer(int port)
-    : app_(), port_(port), broadcast_timer_(nullptr, [](us_timer_t *t) {
+WebSocketServer::WebSocketServer(int port, const std::string &key_file,
+                                 const std::string &cert_file)
+    : app_({.key_file_name = key_file.c_str(),
+            .cert_file_name = cert_file.c_str()}),
+      port_(port), broadcast_timer_(nullptr, [](us_timer_t *t) {
           if (t)
               us_timer_close(t);
       }) {
@@ -23,7 +26,7 @@ WebSocketServer::WebSocketServer(int port)
 };
 
 void WebSocketServer::setup_routes(void) {
-    uWS::App::WebSocketBehavior<SocketData> ws_behaviour = {
+    uWS::SSLApp::WebSocketBehavior<SocketData> ws_behaviour = {
         .open = on_open,
         .message = on_message,
         .close = on_close,
@@ -50,7 +53,7 @@ void WebSocketServer::on_listen(us_listen_socket_t *listen_socket) {
 
     us_loop_t *loop = (us_loop_t *)uWS::Loop::get();
     broadcast_timer_.reset(us_create_timer(loop, 0, sizeof(uWS::App *)));
-    *((uWS::App **)us_timer_ext(broadcast_timer_.get())) = &app_;
+    *((uWS::SSLApp **)us_timer_ext(broadcast_timer_.get())) = &app_;
     us_timer_set(broadcast_timer_.get(), broadcast_callback, 1000, 1000);
 }
 

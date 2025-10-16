@@ -15,7 +15,7 @@ set(USOCKETS_LIBRARY ${USOCKETS_SOURCE_DIR}/uSockets.a)
 
 add_custom_command(
     OUTPUT ${USOCKETS_LIBRARY}
-    COMMAND make
+    COMMAND make WITH_OPENSSL=1
     WORKING_DIRECTORY ${USOCKETS_SOURCE_DIR}
     COMMENT "Building uSockets library with its Makefile"
 )
