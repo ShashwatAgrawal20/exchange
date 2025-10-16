@@ -1,5 +1,6 @@
 #pragma once
-#include "include/main.hpp"
+
+#include <include/main.hpp>
 
 class WebSocketServer {
   public:

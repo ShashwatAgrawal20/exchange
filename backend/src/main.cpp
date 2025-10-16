@@ -1,5 +1,4 @@
-#include "include/WebSocketServer.hpp"
-#include <iostream>
+#include <include/WebSocketServer.hpp>
 
 int main() {
     constexpr int listen_port = 7000;
