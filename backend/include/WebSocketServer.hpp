@@ -1,6 +1,10 @@
 #pragma once
 
-#include <include/main.hpp>
+#include "external/uwebsockets/src/App.h"
+
+#include <memory>
+#include <string>
+#include <string_view>
 
 class WebSocketServer {
   public:
@@ -23,6 +27,8 @@ class WebSocketServer {
                            uWS::OpCode op_code);
     static void on_close(WebSocket *ws, int code, std::string_view message);
 
+    std::string key_file_;
+    std::string cert_file_;
     uWS::SSLApp app_;
     int port_;
     std::unique_ptr<us_timer_t, void (*)(us_timer_t *)> broadcast_timer_;

@@ -1,4 +1,4 @@
 #pragma once
-#include <include/main.hpp>
+#include <string>
 
 std::string create_market_snapshot();

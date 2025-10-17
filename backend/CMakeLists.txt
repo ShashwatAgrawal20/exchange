@@ -6,6 +6,14 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(TARGET_NAME websocket_server)
+include(FetchContent)
+
+FetchContent_Declare(
+  tec.h
+  GIT_REPOSITORY https://github.com/ShashwatAgrawal20/tec.h.git
+  GIT_TAG        v1.0.1
+)
+FetchContent_MakeAvailable(tec.h)
 
 find_package(OpenSSL REQUIRED)
 find_package(ZLIB REQUIRED)
@@ -15,8 +23,7 @@ set(USOCKETS_LIBRARY ${USOCKETS_SOURCE_DIR}/uSockets.a)
 
 add_custom_command(
     OUTPUT ${USOCKETS_LIBRARY}
-    COMMAND make WITH_OPENSSL=1
-    WORKING_DIRECTORY ${USOCKETS_SOURCE_DIR}
+    COMMAND ${CMAKE_MAKE_PROGRAM} WITH_OPENSSL=1 -C ${USOCKETS_SOURCE_DIR}
     COMMENT "Building uSockets library with its Makefile"
 )
 
@@ -30,19 +37,26 @@ set_target_properties(uSockets PROPERTIES
     IMPORTED_LOCATION "${USOCKETS_LIBRARY}"
     INTERFACE_INCLUDE_DIRECTORIES "${USOCKETS_SOURCE_DIR}/src"
 )
+add_dependencies(uSockets build_usockets)
 
 add_library(uWebSockets_Interface INTERFACE)
-
 target_include_directories(uWebSockets_Interface INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
-
 target_link_libraries(uWebSockets_Interface INTERFACE uSockets ZLIB::ZLIB OpenSSL::SSL OpenSSL::Crypto)
 
 file(GLOB TARGET_SOURCES "src/*.cpp")
-add_executable(${TARGET_NAME} ${TARGET_SOURCES})
+list(FILTER TARGET_SOURCES EXCLUDE REGEX ".*/main\\.cpp$")
 
-target_link_libraries(${TARGET_NAME} PRIVATE uWebSockets_Interface)
+add_library(app_lib STATIC ${TARGET_SOURCES})
+target_link_libraries(app_lib PUBLIC uWebSockets_Interface)
+target_include_directories(app_lib PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+add_dependencies(app_lib build_usockets)
+
+add_executable(${TARGET_NAME} src/main.cpp)
+target_link_libraries(${TARGET_NAME} PRIVATE app_lib)
 
 if(MSVC)
   target_compile_options(${TARGET_NAME} PRIVATE /W4 /WX)
@@ -50,4 +64,25 @@ else()
   target_compile_options(${TARGET_NAME} PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
-add_dependencies(websocket_server build_usockets)
+include(CTest)
+if(BUILD_TESTING)
+    file(GLOB TEST_SOURCES "tests/*.cpp")
+    add_executable(tests EXCLUDE_FROM_ALL
+        ${TEST_SOURCES}
+    )
+    target_link_libraries(tests PRIVATE app_lib)
+    target_include_directories(tests PUBLIC
+        ${tec.h_SOURCE_DIR}
+    )
+    if(MSVC)
+      target_compile_options(tests PRIVATE /W4 /WX)
+    else()
+      target_compile_options(tests PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME tests COMMAND tests)
+    add_custom_target(check
+        COMMAND ${CMAKE_COMMAND} -E env CTEST_OUTPUT_ON_FAILURE=1 ./tests || true
+        DEPENDS tests
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    )
+endif()

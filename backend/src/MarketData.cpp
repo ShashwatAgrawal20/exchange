@@ -1,4 +1,8 @@
-#include <include/MarketData.hpp>
+#include "include/MarketData.hpp"
+
+#include <format>
+#include <random>
+#include <string>
 
 std::string create_market_snapshot() {
     static std::mt19937 gen(std::random_device{}());

@@ -21,12 +21,29 @@ For local development, you can generate a self-signed certificate.
         -subj "/C=IN/O=Builder Inc./CN=localhost" \
         -addext "subjectAltName = DNS:localhost"
     ```
-    You will be prompted to fill in some information. For the "Common Name," using `localhost` is a good practice.
 
 The server is configured to look for `key.pem` and `cert.pem` inside the `certs/` directory.
 ```bash
-# build project
+# Using make (default generator)
 cd build && make
+
+# Or a generator-agnostic alternative
+cd build && cmake --build .
+```
+
+## Tests
+```bash
+# Build test executable only
+cd build && make tests
+
+# Run tests manually
+./tests
+
+# Build and run all tests in one step
+make check
+
+# Or using CMake generator-agnostic syntax
+cmake --build . --target check
 ```
 
 ## Editor Notes

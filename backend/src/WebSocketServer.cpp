@@ -1,5 +1,7 @@
-#include <include/MarketData.hpp>
-#include <include/WebSocketServer.hpp>
+#include "include/WebSocketServer.hpp"
+#include "include/MarketData.hpp"
+
+#include <iostream>
 
 namespace {
 constexpr static std::string_view MARKET_SNAPSHOT_SUB_STR = "market/snapshot";
@@ -16,8 +18,9 @@ void broadcast_callback(us_timer_t *t) {
 
 WebSocketServer::WebSocketServer(int port, const std::string &key_file,
                                  const std::string &cert_file)
-    : app_({.key_file_name = key_file.c_str(),
-            .cert_file_name = cert_file.c_str()}),
+    : key_file_(key_file), cert_file_(cert_file),
+      app_({.key_file_name = key_file_.c_str(),
+            .cert_file_name = cert_file_.c_str()}),
       port_(port), broadcast_timer_(nullptr, [](us_timer_t *t) {
           if (t)
               us_timer_close(t);
