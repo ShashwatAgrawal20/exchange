@@ -1,5 +1,6 @@
 #include "include/WebSocketServer.hpp"
 #include "include/MarketData.hpp"
+#include <chrono>
 #include <nlohmann/json.hpp>
 #include <print>
 
@@ -105,6 +106,24 @@ void WebSocketServer::on_open(WebSocket *ws) {
 void WebSocketServer::on_message(WebSocket *ws, std::string_view message,
                                  uWS::OpCode op_code) {
     SocketData *user = ws->getUserData();
+    if (!message.empty() &&
+        std::all_of(message.begin(), message.end(), ::isdigit)) {
+        try {
+            auto server_timestamp =
+                std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+            long long client_timestamp = std::stoll(std::string(message));
+            long long diff = server_timestamp - client_timestamp;
+            std::println("[LOG]: server: {} client: {} diff: {}",
+                         server_timestamp, client_timestamp, diff);
+
+        } catch (const std::exception &e) {
+            std::println(stderr, "Recieved a non-timestamp message: {} ",
+                         message);
+        }
+        return;
+    }
 
     try {
         json msg = json::parse(message);
