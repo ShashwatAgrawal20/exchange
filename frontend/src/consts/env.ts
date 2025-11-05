@@ -1,1 +1,1 @@
-export const SOCKET_URL = import.meta.env.PROD ? '' : 'ws://localhost:7000'
+export const SOCKET_URL = import.meta.env.PROD ? '' : 'wss://localhost:7000'

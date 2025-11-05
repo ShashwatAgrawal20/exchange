@@ -9,6 +9,8 @@ export function runBenchmark() {
 }
 
 function sendMessages() {
+    exchangeSocket.sendMessage(JSON.stringify({"type":"login", "username":"shashwat", "password":"shashwat"}));
+    exchangeSocket.sendMessage(JSON.stringify({"type":"subscribe", "channel":"market/snapshot"}));
   for (let i = 0; i < 10_000; i++) {
     setTimeout(() => {
       exchangeSocket.sendMessage(Date.now());

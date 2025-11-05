@@ -13,7 +13,7 @@ export class ExchangeSocket {
 
   private onOpen() {
     this.#socket.onopen = function (e) {
-      this.send("Nero bhai, love you");
+      // this.send("Nero bhai, love you");
     };
   }
 
@@ -25,7 +25,7 @@ export class ExchangeSocket {
     this.#socket.onmessage = function (e) {
       const snapshot = JSON.parse(e.data)
       console.log(snapshot)
-      stateManager.updateSnapshot(snapshot)
+      if (snapshot.ask && snapshot.bid) stateManager.updateSnapshot(snapshot)
     };
   }
 
