@@ -1,6 +1,7 @@
 #pragma once
 
 #include "external/uwebsockets/src/App.h"
+#include "include/AuthManager.hpp"
 
 #include <memory>
 #include <string>
@@ -14,19 +15,26 @@ class WebSocketServer {
 
     constexpr static bool IS_USING_SSL = true;
     constexpr static bool IS_SERVER = true;
+    ~WebSocketServer();
 
   private:
-    struct SocketData {};
+    struct SocketData {
+        bool is_authenticated = false;
+        std::string username;
+    };
     using WebSocket = uWS::WebSocket<IS_USING_SSL, IS_SERVER, SocketData>;
 
     void setup_routes(void);
-    void on_listen(us_listen_socket_t *listen_socket);
 
-    static void on_open(WebSocket *ws);
-    static void on_message(WebSocket *ws, std::string_view message,
-                           uWS::OpCode op_code);
-    static void on_close(WebSocket *ws, int code, std::string_view message);
+    void on_open(WebSocket *ws);
+    void on_message(WebSocket *ws, std::string_view message,
+                    uWS::OpCode op_code);
+    void on_close(WebSocket *ws, int code, std::string_view message);
 
+    void start_broadcast_timer(void);
+    void stop_broadcast_timer(void);
+
+    AuthManager auth_;
     std::string key_file_;
     std::string cert_file_;
     uWS::SSLApp app_;

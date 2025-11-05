@@ -15,6 +15,13 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(tec.h)
 
+FetchContent_Declare(
+  nlohmann_json
+  GIT_REPOSITORY https://github.com/nlohmann/json.git
+  GIT_TAG        v3.12.0
+)
+FetchContent_MakeAvailable(nlohmann_json)
+
 find_package(OpenSSL REQUIRED)
 find_package(ZLIB REQUIRED)
 
@@ -49,7 +56,10 @@ file(GLOB TARGET_SOURCES "src/*.cpp")
 list(FILTER TARGET_SOURCES EXCLUDE REGEX ".*/main\\.cpp$")
 
 add_library(app_lib STATIC ${TARGET_SOURCES})
-target_link_libraries(app_lib PUBLIC uWebSockets_Interface)
+target_link_libraries(app_lib PUBLIC
+    uWebSockets_Interface
+    nlohmann_json::nlohmann_json
+)
 target_include_directories(app_lib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
