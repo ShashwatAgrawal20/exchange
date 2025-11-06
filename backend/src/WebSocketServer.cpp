@@ -1,12 +1,11 @@
 #include "include/WebSocketServer.hpp"
 #include "include/MarketData.hpp"
 #include <chrono>
+#include <include/handlers/Handlers.hpp>
 #include <nlohmann/json.hpp>
 #include <print>
 
 namespace {
-constexpr static std::string_view MARKET_SNAPSHOT_SUB_STR = "market/snapshot";
-
 struct BroadcastData {
     uWS::SSLApp *app;
     size_t broadcast_left;
@@ -17,11 +16,14 @@ void broadcast_callback(us_timer_t *t) {
         BroadcastData *data = static_cast<BroadcastData *>(us_timer_ext(t));
         if (data->broadcast_left > 0) {
             std::string snapshot = create_market_snapshot();
-            data->app->publish(MARKET_SNAPSHOT_SUB_STR, snapshot,
-                               uWS::OpCode::TEXT);
+            data->app->publish(WebSocketServer::MARKET_SNAPSHOT_SUB_STR,
+                               snapshot, uWS::OpCode::TEXT);
 
             data->broadcast_left--;
             std::println("Broadcast sent. {} remaining", data->broadcast_left);
+        } else {
+            // closing the timer here will cause double free :sob:
+            us_timer_set(t, nullptr, 0, 0);
         }
     }
 };
@@ -78,7 +80,7 @@ void WebSocketServer::stop_broadcast_timer(void) {
         return;
 
     std::println("No subscribers left. Stopping broadcast timer.");
-    broadcast_timer_.reset(nullptr);
+    broadcast_timer_.reset();
 }
 
 void WebSocketServer::run(void) {
@@ -125,72 +127,53 @@ void WebSocketServer::on_message(WebSocket *ws, std::string_view message,
         return;
     }
 
+    enum class MessageType { LOGIN, SUBSCRIBE, UNSUBSCRIBE, UNKNOWN };
+    auto message_type_from_string = [](std::string_view type) {
+        if (type == "login")
+            return MessageType::LOGIN;
+        if (type == "subscribe")
+            return MessageType::SUBSCRIBE;
+        if (type == "unsubscribe")
+            return MessageType::UNSUBSCRIBE;
+        return MessageType::UNKNOWN;
+    };
+
     try {
         json msg = json::parse(message);
         std::string type = msg.value("type", "");
-        if (type == "login") {
-            std::string username = msg.value("username", "");
-            std::string password = msg.value("password", "");
-
-            if (auth_.authenticate(username, password)) {
-                user->is_authenticated = true;
-                user->username = username;
-                ws->send(R"({"type":"login_response","status":"success"})",
-                         uWS::OpCode::TEXT);
-                std::println("[Auth] {} logged in successfully", username);
-
-            } else {
-                ws->send(R"({"type":"login_response","status":"failed"})",
-                         uWS::OpCode::TEXT);
-                std::println("[Auth Failed] Invalid credentials for {}",
-                             username);
-            }
-            return;
-        }
-
-        if (!user->is_authenticated) {
+        MessageType mtype = message_type_from_string(type);
+        if (mtype != MessageType::LOGIN && !user->is_authenticated) {
             ws->send(R"({"type":"error","message":"not_authenticated"})",
                      uWS::OpCode::TEXT);
             return;
         }
 
-        if (type == "subscribe") {
-            std::string channel = msg.value("channel", "");
-            if (channel == MARKET_SNAPSHOT_SUB_STR) {
-                ws->subscribe(MARKET_SNAPSHOT_SUB_STR);
-                start_broadcast_timer();
-                std::println("[Sub] {} subscribed to {}", user->username,
-                             channel);
-                ordered_json response = {{"type", "subscribe_response"},
-                                         {"status", "ok"},
-                                         {"channel", MARKET_SNAPSHOT_SUB_STR}};
-                ws->send(response.dump(), uWS::OpCode::TEXT);
-            } else {
-                ws->send(R"({"type":"error","message":"unknown_channel"})",
-                         uWS::OpCode::TEXT);
+        /*
+         * TODO: class with virtual handler function would be the best choice
+         * for this :)"
+         */
+        // clang-format off
+        switch (mtype) {
+            case MessageType::LOGIN: {
+                LoginHandler(this, ws, user, msg);
+                break;
             }
-            return;
-        }
-
-        if (type == "unsubscribe") {
-            std::string channel = msg.value("channel", "");
-            if (channel == MARKET_SNAPSHOT_SUB_STR) {
-                ws->unsubscribe(MARKET_SNAPSHOT_SUB_STR);
-                if (app_.numSubscribers(MARKET_SNAPSHOT_SUB_STR) == 0) {
-                    stop_broadcast_timer();
-                }
-                ordered_json response = {{"type", "unsubscribe_response"},
-                                         {"status", "ok"},
-                                         {"channel", MARKET_SNAPSHOT_SUB_STR}};
-                ws->send(response.dump(), uWS::OpCode::TEXT);
-            } else {
-                ws->send(R"({"type":"error","message":"unknown_channel"})",
-                         uWS::OpCode::TEXT);
+            case MessageType::SUBSCRIBE: {
+                SubscribeHandler(this, ws, user, msg);
+                break;
             }
-            return;
+            case MessageType::UNSUBSCRIBE: {
+                UnSubscribeHandler(this, ws, user, msg);
+                break;
+            }
+            case MessageType::UNKNOWN:
+            default: {
+                ws->send(R"({"type":"error","message":"unknown_command"})",
+                         uWS::OpCode::TEXT);
+                break;
+            }
         }
-        ws->send(R"({"type":"error","message":"unknown_command"})",
-                 uWS::OpCode::TEXT);
+        // clang-format on
     } catch (const std::exception &e) {
         std::println("[Error] Invalid JSON:{}", e.what());
         ws->send(R"({"type":"error","message":"invalid_json"})",

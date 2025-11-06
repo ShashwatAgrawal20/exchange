@@ -52,7 +52,7 @@ target_include_directories(uWebSockets_Interface INTERFACE
 )
 target_link_libraries(uWebSockets_Interface INTERFACE uSockets ZLIB::ZLIB OpenSSL::SSL OpenSSL::Crypto)
 
-file(GLOB TARGET_SOURCES "src/*.cpp")
+file(GLOB_RECURSE TARGET_SOURCES "src/*.cpp")
 list(FILTER TARGET_SOURCES EXCLUDE REGEX ".*/main\\.cpp$")
 
 add_library(app_lib STATIC ${TARGET_SOURCES})
@@ -76,7 +76,7 @@ endif()
 
 include(CTest)
 if(BUILD_TESTING)
-    file(GLOB TEST_SOURCES "tests/*.cpp")
+    file(GLOB_RECURSE TEST_SOURCES "tests/*.cpp")
     add_executable(tests EXCLUDE_FROM_ALL
         ${TEST_SOURCES}
     )
