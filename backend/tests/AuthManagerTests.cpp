@@ -8,43 +8,43 @@ TEC_SETUP(auth_manager){};
 
 TEC(auth_manager, ValidCredentialsAuthenticate) {
     bool result = auth.authenticate("shashwat", "shashwat");
-    TEC_ASSERT_EQ(result, true);
+    TEC_ASSERT_TRUE(result);
 
     result = auth.authenticate("nero", "nero");
-    TEC_ASSERT_EQ(result, true);
+    TEC_ASSERT_TRUE(result);
 }
-
 TEC(auth_manager, InvalidCredentialsFail) {
-    TEC_ASSERT_EQ(auth.authenticate("wrong", "credentials"), false);
-    TEC_ASSERT_EQ(auth.authenticate("shashwat", "WRONG"), false);
-    TEC_ASSERT_EQ(auth.authenticate("unknown", "shashwat"), false);
+
+    TEC_ASSERT_FALSE(auth.authenticate("wrong", "credentials"));
+    TEC_ASSERT_FALSE(auth.authenticate("shashwat", "WRONG"));
+    TEC_ASSERT_FALSE(auth.authenticate("unknown", "shashwat"));
 }
 
 TEC(auth_manager, EmptyCredentialsFail) {
-    TEC_ASSERT_EQ(auth.authenticate("", ""), false);
-    TEC_ASSERT_EQ(auth.authenticate("", "something"), false);
-    TEC_ASSERT_EQ(auth.authenticate("someone", ""), false);
+    TEC_ASSERT_FALSE(auth.authenticate("", ""));
+    TEC_ASSERT_FALSE(auth.authenticate("", "something"));
+    TEC_ASSERT_FALSE(auth.authenticate("someone", ""));
 }
 
 TEC(auth_manager, UsernameCaseSensitive) {
     bool lower = auth.authenticate("shashwat", "shashwat");
     bool upper = auth.authenticate("SHASHWAT", "shashwat");
     TEC_ASSERT(lower);
-    TEC_ASSERT_EQ(upper, false);
+    TEC_ASSERT_FALSE(upper);
 }
 
 TEC(auth_manager, PasswordCaseSensitive) {
     bool exact = auth.authenticate("nero", "nero");
     bool mixed = auth.authenticate("nero", "NeRo");
     TEC_ASSERT(exact);
-    TEC_ASSERT_EQ(mixed, false);
+    TEC_ASSERT_FALSE(mixed);
 }
 
 TEC(auth_manager, WhitespaceInCredentialsInvalidates) {
-    TEC_ASSERT_EQ(auth.authenticate(" shashwat", "shashwat"), false);
-    TEC_ASSERT_EQ(auth.authenticate("shashwat ", "shashwat"), false);
-    TEC_ASSERT_EQ(auth.authenticate("shashwat", " shashwat"), false);
-    TEC_ASSERT_EQ(auth.authenticate("shashwat", "shashwat "), false);
+    TEC_ASSERT_FALSE(auth.authenticate(" shashwat", "shashwat"));
+    TEC_ASSERT_FALSE(auth.authenticate("shashwat ", "shashwat"));
+    TEC_ASSERT_FALSE(auth.authenticate("shashwat", " shashwat"));
+    TEC_ASSERT_FALSE(auth.authenticate("shashwat", "shashwat "));
 }
 
 TEC(auth_manager, RepeatedCallsAreIdempotent) {
