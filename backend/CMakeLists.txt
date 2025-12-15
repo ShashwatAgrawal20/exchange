@@ -6,6 +6,23 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(TARGET_NAME websocket_server)
+
+if (MSVC)
+    add_compile_options(/W4 /WX)
+else()
+    add_compile_options(-Wall -Wextra -Wpedantic)
+    if (CMAKE_BUILD_TYPE MATCHES "Debug|RelWithDebInfo")
+        add_compile_options(
+            -fsanitize=address,undefined
+            -fno-omit-frame-pointer
+        )
+        add_link_options(
+            -fsanitize=address,undefined
+        )
+    endif()
+
+endif()
+
 include(FetchContent)
 
 FetchContent_Declare(
@@ -30,7 +47,7 @@ set(USOCKETS_LIBRARY ${USOCKETS_SOURCE_DIR}/uSockets.a)
 
 add_custom_command(
     OUTPUT ${USOCKETS_LIBRARY}
-    COMMAND ${CMAKE_MAKE_PROGRAM} WITH_OPENSSL=1 -C ${USOCKETS_SOURCE_DIR}
+    COMMAND make WITH_OPENSSL=1 -C ${USOCKETS_SOURCE_DIR}
     COMMENT "Building uSockets library with its Makefile"
 )
 
@@ -68,12 +85,6 @@ add_dependencies(app_lib build_usockets)
 add_executable(${TARGET_NAME} src/main.cpp)
 target_link_libraries(${TARGET_NAME} PRIVATE app_lib)
 
-if(MSVC)
-  target_compile_options(${TARGET_NAME} PRIVATE /W4 /WX)
-else()
-  target_compile_options(${TARGET_NAME} PRIVATE -Wall -Wextra -Wpedantic)
-endif()
-
 include(CTest)
 if(BUILD_TESTING)
     file(GLOB_RECURSE TEST_SOURCES "tests/*.cpp")
@@ -84,11 +95,6 @@ if(BUILD_TESTING)
     target_include_directories(tests PUBLIC
         ${tec.h_SOURCE_DIR}
     )
-    if(MSVC)
-      target_compile_options(tests PRIVATE /W4 /WX)
-    else()
-      target_compile_options(tests PRIVATE -Wall -Wextra -Wpedantic)
-    endif()
     add_test(NAME tests COMMAND tests)
     add_custom_target(check
         COMMAND ${CMAKE_COMMAND} -E env CTEST_OUTPUT_ON_FAILURE=1 ./tests || true

@@ -4,8 +4,6 @@
 void LoginHandler(WebSocketServer *server, WebSocketServer::WebSocket *ws,
                   WebSocketServer::SocketData *user,
                   const nlohmann::json &msg) {
-    using json = nlohmann::json;
-
     std::string username = msg.value("username", "");
     std::string password = msg.value("password", "");
 

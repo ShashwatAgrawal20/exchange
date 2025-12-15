@@ -33,15 +33,13 @@ using ordered_json = nlohmann::ordered_json;
 
 WebSocketServer::WebSocketServer(int port, const std::string &key_file,
                                  const std::string &cert_file)
-    : key_file_(key_file), cert_file_(cert_file),
+    : auth_(), key_file_(key_file), cert_file_(cert_file),
       app_({.key_file_name = key_file_.c_str(),
             .cert_file_name = cert_file_.c_str()}),
-      port_(port), broadcast_timer_(nullptr,
-                                    [](us_timer_t *t) {
-                                        if (t)
-                                            us_timer_close(t);
-                                    }),
-      auth_{} {
+      port_(port), broadcast_timer_(nullptr, [](us_timer_t *t) {
+          if (t)
+              us_timer_close(t);
+      }) {
     setup_routes();
 };
 
@@ -98,7 +96,7 @@ void WebSocketServer::run(void) {
     std::println("Server shutdown.");
 }
 
-void WebSocketServer::on_open(WebSocket *ws) {
+void WebSocketServer::on_open(WebSocket * /*ws*/) {
     std::println("Client Connected");
 }
 
@@ -106,7 +104,7 @@ void WebSocketServer::on_open(WebSocket *ws) {
  * yeah this does way too much rn, but it works. don’t touch it till it breaks.
  */
 void WebSocketServer::on_message(WebSocket *ws, std::string_view message,
-                                 uWS::OpCode op_code) {
+                                 uWS::OpCode /*op_code*/) {
     SocketData *user = ws->getUserData();
     if (!message.empty() &&
         std::all_of(message.begin(), message.end(), ::isdigit)) {

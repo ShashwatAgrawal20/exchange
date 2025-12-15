@@ -60,8 +60,13 @@ TEC(auth_manager, PerformanceSanity) {
     auth.authenticate("wrong", "credentials");
     auto end = std::chrono::high_resolution_clock::now();
 
+    /* THIS SHIT USED TO BE UNDER 3 microseconds, but we had a check on the safe
+     * side to be around 10. But now that we've added those fsanitize compile
+     * flags, the performance has degraded quite a bit, so to be safe we're
+     * making this 100.
+     */
     auto elapsed =
         std::chrono::duration_cast<std::chrono::microseconds>(end - start)
             .count();
-    TEC_ASSERT_LT(elapsed, 10);
+    TEC_ASSERT_LT(elapsed, 100);
 }

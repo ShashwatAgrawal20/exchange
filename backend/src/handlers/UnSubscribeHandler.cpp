@@ -1,7 +1,7 @@
 #include "include/handlers/UnSubscribeHandler.hpp"
 
 void UnSubscribeHandler(WebSocketServer *server, WebSocketServer::WebSocket *ws,
-                        WebSocketServer::SocketData *user,
+                        WebSocketServer::SocketData * /*user*/,
                         const nlohmann::json &msg) {
 
     using ordered_json = nlohmann::ordered_json;
