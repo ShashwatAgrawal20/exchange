@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif()
 
 project(WebSocketServer CXX)
 
@@ -32,18 +35,9 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(tec.h)
 
-# Download json.hpp directly instead of cloning entire repo
-set(JSON_HPP_DIR "${CMAKE_BINARY_DIR}/nlohmann")
-set(JSON_HPP_FILE "${JSON_HPP_DIR}/json.hpp")
-if(NOT EXISTS ${JSON_HPP_FILE})
-    file(MAKE_DIRECTORY ${JSON_HPP_DIR})
-    file(DOWNLOAD
-        https://github.com/nlohmann/json/releases/download/v3.12.0/json.hpp
-        ${JSON_HPP_FILE}
-    )
-endif()
-add_library(nlohmann_json INTERFACE)
-target_include_directories(nlohmann_json INTERFACE ${CMAKE_BINARY_DIR})
+# https://json.nlohmann.me/integration/cmake/#fetchcontent
+FetchContent_Declare(nlohmann_json URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz)
+FetchContent_MakeAvailable(nlohmann_json)
 
 find_package(OpenSSL REQUIRED)
 find_package(ZLIB REQUIRED)
@@ -81,7 +75,7 @@ list(FILTER TARGET_SOURCES EXCLUDE REGEX ".*/main\\.cpp$")
 add_library(app_lib STATIC ${TARGET_SOURCES})
 target_link_libraries(app_lib PUBLIC
     uWebSockets_Interface
-    nlohmann_json
+    nlohmann_json::nlohmann_json
 )
 target_include_directories(app_lib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
