@@ -1,0 +1,29 @@
+name: Notify Discord
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    types: [closed]
+    branches:
+      - master
+  issues:
+    types: [opened]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    # For PRs, only run if it was actually merged (not just closed)
+    if: |
+      github.event_name == 'push' ||
+      github.event_name == 'issues' ||
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
+    steps:
+      - name: Send to Discord
+        run: |
+          curl -H "Content-Type: application/json" \
+          -d "{
+            \"content\": \"Repo update in ${{ github.repository }}\nEvent: ${{ github.event_name }}\nUser: ${{ github.actor }}\nBranch: ${{ github.ref_name }}\"
+          }" \
+          ${{ secrets.DISCORD_WEBHOOK }}
