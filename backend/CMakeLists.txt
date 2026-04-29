@@ -31,7 +31,6 @@ include(FetchContent)
 FetchContent_Declare(
   tec.h
   GIT_REPOSITORY https://github.com/ShashwatAgrawal20/tec.h.git
-  GIT_TAG        v1.1.0
 )
 FetchContent_MakeAvailable(tec.h)
 
