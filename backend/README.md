@@ -70,7 +70,7 @@ Response:
 ```
 Other statuses: `"failed"`, `"already_logged_in"`
 
-Default credentials: `test/test`, `nero/nero`
+Default credentials: `test/test`
 
 #### Subscribe to Market Data
 Send:
